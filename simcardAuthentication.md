@@ -151,6 +151,10 @@ operator rather than storing K at the base station.
 Real AKA uses standardized cryptographic functions and carefully sized byte
 arrays. Our first C++ program models only the protocol's data flow:
 
+> **Simplified representation:** `AuthRequest` exposes `sqn` and
+> `network_proof` as separate fields to make the learning flow visible. It is
+> not the message format used by real AKA.
+
 ```cpp
 #include <cstdint>
 
@@ -163,9 +167,9 @@ struct AuthRequest {
 };
 ```
 
-For now, `sqn` is visible as a separate field so that the flow is easy to
-understand. A more realistic model would represent the protected sequence
-number and network proof as parts of AUTN.
+In real AKA, the sequence number is concealed and the network-authentication
+proof is carried as part of AUTN. A production implementation must follow the
+standardized AUTN structure rather than this teaching model.
 
 ### C++ terms
 

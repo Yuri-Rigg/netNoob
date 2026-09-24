@@ -3,13 +3,14 @@
 // A fixed-width type keeps the size of each value explicit in this model.
 using Value = std::uint64_t;
 
-// A simplified authentication request used to illustrate the protocol flow.
-// Real AKA sends RAND and AUTN; SQN and the network proof are protected inside
-// AUTN rather than transmitted as separate fields.
+// SIMPLIFIED REPRESENTATION FOR LEARNING ONLY:
+// Real AKA sends RAND and AUTN. This model exposes SQN and the network proof as
+// separate fields to make the protocol flow visible; it is not a real AKA
+// message format.
 struct AuthRequest {
     Value rand;
-    Value sqn;
-    Value network_proof;
+    Value sqn;            // Concealed within AUTN in real AKA.
+    Value network_proof;  // Represented within AUTN in real AKA.
 };
 
 // Declare the contract for our simplified proof function. This models one
