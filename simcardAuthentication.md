@@ -179,3 +179,58 @@ number and network proof as parts of AUTN.
 
 > This integer representation is suitable for a learning model, not a real AKA
 > implementation.
+
+## Step 7: Declare the Operation Before Implementing It
+
+Here, an **operation** means the function that represents our simplified proof
+algorithm, F. Both the operator's authentication system and the SIM must derive
+the same output from the same inputs:
+
+```text
+proof = F(K, RAND, SQN)
+```
+
+We first declare the function's contract in C++:
+
+```cpp
+Value MakeTrialProof(Value key, Value rand, Value sqn);
+```
+
+This declaration tells the compiler that `MakeTrialProof`:
+
+- accepts a key, random challenge, and sequence number; and
+- returns one `Value` representing the proof.
+
+The declaration describes how other code can call the function. A later
+**definition** will provide the function body and implement its behavior.
+
+For this learning model, the function must have two properties:
+
+1. **Deterministic:** the same inputs must always produce the same output. This
+   allows the SIM and operator to calculate matching values independently.
+2. **Sensitive to every input:** changing K, RAND, or SQN should normally change
+   the output.
+
+These properties make the protocol flow useful to simulate, but they do not
+make the function cryptographically secure. A real AKA implementation must use
+the standardized cryptographic functions and data formats.
+
+### Calling the declared function
+
+The network side of the model can now request a proof using the shared inputs:
+
+```cpp
+const Value shared_key = 1111;
+
+current_request.network_proof = MakeTrialProof(
+    shared_key, current_request.rand, current_request.sqn);
+```
+
+The declaration is enough for the compiler to check that this call uses the
+correct argument and return types. However, the program cannot yet be linked
+into a complete executable because `MakeTrialProof` has not been defined. Its
+definition will supply the algorithm in the next step.
+
+The hard-coded key is acceptable only in this toy model. A real implementation
+must keep the subscriber's long-term key inside protected authentication
+infrastructure and the SIM or USIM.
