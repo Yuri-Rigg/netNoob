@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <iostream>
 
 // A fixed-width type keeps the size of each value explicit in this model.
 using Value = std::uint64_t;
@@ -13,9 +14,11 @@ struct AuthRequest {
     Value network_proof;  // Represented within AUTN in real AKA.
 };
 
-// Declare the contract for our simplified proof function. This models one
-// conceptual part of authentication; it does not construct a real AKA AUTN.
-Value MakeTrialProof(Value key, Value rand, Value sqn);
+// Define a deterministic proof function for the learning model. This function
+// is not cryptographically secure and does not construct a real AKA AUTN.
+Value MakeTrialProof(Value key, Value rand, Value sqn) {
+    return (key ^ rand) + (sqn * 31);
+}
 
 int main() {
     // A toy shared key for the protocol model. A real long-term key must not be
@@ -31,6 +34,21 @@ int main() {
     // Calculate the model's network proof from the shared inputs.
     current_request.network_proof = MakeTrialProof(
         shared_key, current_request.rand, current_request.sqn);
+
+    std::cout << current_request.network_proof << std::endl;
+    std::cout << "Program execution completed" << std::endl;
+
+    // The SIM stores its own copy of the same long-term key.
+    const Value sim_key = 1111;
+
+    const Value expected_network_proof = MakeTrialProof(
+        sim_key, current_request.rand, current_request.sqn);
+
+    const bool network_is_authenticated =
+        current_request.network_proof == expected_network_proof;
+    std::cout << std::boolalpha;
+    std::cout << "Network authenticated: " << network_is_authenticated
+              << std::endl;
 }
 
 /*
@@ -45,4 +63,17 @@ int main() {
 
  This representation is for learning purposes and does not model real AKA
  cryptographic values or operations.
+ */
+
+/*
+ Linker note:
+
+ Declaring MakeTrialProof without defining it allowed compilation but caused an
+ "undefined symbol" linker error. Providing the function body resolved it.
+
+ Algorithm used by this model:
+     (key ^ rand) + (sqn * 31)
+
+ This expression is only for demonstrating protocol flow. A real
+ authentication algorithm must satisfy the relevant cryptographic standard.
  */
