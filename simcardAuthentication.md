@@ -231,10 +231,51 @@ current_request.network_proof = MakeTrialProof(
 ```
 
 The declaration is enough for the compiler to check that this call uses the
-correct argument and return types. However, the program cannot yet be linked
-into a complete executable because `MakeTrialProof` has not been defined. Its
-definition will supply the algorithm in the next step.
+correct argument and return types. The linker also needs a definition of
+`MakeTrialProof`, which supplies the function body.
 
 The hard-coded key is acceptable only in this toy model. A real implementation
 must keep the subscriber's long-term key inside protected authentication
 infrastructure and the SIM or USIM.
+
+## Step 8: Define the Temporary Proof Function
+
+Calling a declared function without defining it produced a linker error. To
+complete the learning model, we added a temporary proof algorithm:
+
+```cpp
+Value MakeTrialProof(Value key, Value rand, Value sqn) {
+    return (key ^ rand) + (sqn * 31);
+}
+```
+
+The `^` operator performs a bitwise XOR. This function is deterministic and
+uses all three inputs, but it is only a representational algorithm. It is not
+cryptographically secure and must not be used as a real authentication
+function.
+
+With the definition present, the program compiles and links successfully.
+
+## Step 9: Model the SIM Side
+
+The model now gives the SIM its own copy of the shared key. The SIM uses the
+same inputs and proof function to calculate the expected network proof:
+
+```cpp
+const Value sim_key = 1111;
+
+const Value expected_network_proof = MakeTrialProof(
+    sim_key, current_request.rand, current_request.sqn);
+
+const bool network_is_authenticated =
+    current_request.network_proof == expected_network_proof;
+```
+
+The comparison succeeds only when both sides calculate the same proof. The
+result can be printed as `true` or `false` by enabling `std::boolalpha`:
+
+```cpp
+std::cout << std::boolalpha;
+std::cout << "Network authenticated: " << network_is_authenticated
+          << std::endl;
+```
