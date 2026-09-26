@@ -40,15 +40,15 @@ int main() {
 
     // The SIM stores its own copy of the same long-term key.
     const Value sim_key = 1111;
-
+    const Value sim_stored_sqn = 0 ;
     const Value expected_network_proof = MakeTrialProof(
         sim_key, current_request.rand, current_request.sqn);
-
     const bool network_is_authenticated =
         current_request.network_proof == expected_network_proof;
+    const bool sqn_is_fresh = (current_request.sqn>sqn_is_fresh);
     std::cout << std::boolalpha;
-    std::cout << "Network authenticated: " << network_is_authenticated
-              << std::endl;
+    std::cout << "Network authenticated: " <<network_is_authenticated<<std::endl;
+    std::cout << "SQN is fresh: "<< sqn_is_fresh<< std::endl;
 }
 
 /*
