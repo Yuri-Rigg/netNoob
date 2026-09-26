@@ -279,3 +279,53 @@ std::cout << std::boolalpha;
 std::cout << "Network authenticated: " << network_is_authenticated
           << std::endl;
 ```
+
+
+* getting clarity on the sqn maintenace at both ends 
+component 2 : sim stored sqn 
+
+the sim also keeps its own local value -> sim_stored_sqn 
+
+it represents the latest network sqn the previously accepted as valid 
+it is sim-sode state in our model it is not the sqn carried in current_request 
+
+-> important realisation : 
+  sqn is generated and advanced by the network 
+  the sim stores the latest network sqn it previously accepted 
+  in the simple one-session-at-a-time picture, the sim's stores value is one step behind the network's new value 
+
+  small precision : in real networks it is not guranteeed to be exactly one step behind, so the sim checks whether the received network sqn is acceptably newer.
+
+  newer doesnot mean merely different, the received network sqn must be later in the squence that the value securely stored by the sim
+
+  okay so the maintenance of sqn at the sim is to only verify the freshness of the sqn rather than using it in its side of proof generation   
+
+* step 9 : sim verifies the network proof 
+for this step only, use the received network sqn 
+``` cpp
+const Value sim_key = 1111 ; 
+const Value expected_network_proof = MakeTrialProof(sim_key,current_request.rand, current_request.sqn);
+
+cons bool network_is_authenticated = (current_request.network_proof == expected_network_proof);
+
+
+
+```
+
+next simplified step , freshness will be : 
+current_request.sqn > sim_stored_sqn 
+
+this accepts only a newer network sequence number 
+
+* step 10 - sim checks freshness add the sim's locally stored sequence value: 
+
+const Value sim_stored_sqn = 0 
+
+this means the si previously accepted sqn = 0 
+
+then check whether the received network value is newer : 
+
+const bool sqn_is_fresh = 
+  (current_request.sqn > sim_stored_sqn)
+
+  
