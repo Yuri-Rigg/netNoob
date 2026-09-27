@@ -280,52 +280,55 @@ std::cout << "Network authenticated: " << network_is_authenticated
           << std::endl;
 ```
 
+### Clarifying SQN State at Both Ends
 
-* getting clarity on the sqn maintenace at both ends 
-component 2 : sim stored sqn 
+The SIM also keeps a local value, `sim_stored_sqn`. It represents the latest
+network sequence number that the SIM previously accepted as valid. This is
+SIM-side state; it is separate from the SQN carried by `current_request` in our
+simplified model.
 
-the sim also keeps its own local value -> sim_stored_sqn 
+The important distinction is:
 
-it represents the latest network sqn the previously accepted as valid 
-it is sim-sode state in our model it is not the sqn carried in current_request 
+- the network generates and advances its SQN; and
+- the SIM stores the latest network SQN that it previously accepted.
 
--> important realisation : 
-  sqn is generated and advanced by the network 
-  the sim stores the latest network sqn it previously accepted 
-  in the simple one-session-at-a-time picture, the sim's stores value is one step behind the network's new value 
+In a simple, one-session-at-a-time example, the SIM's stored value may be one
+step behind the network's new value. Real networks do not assume that the two
+values differ by exactly one. Instead, the USIM determines whether the received
+SQN is acceptably newer according to the protocol's freshness rules.
 
-  small precision : in real networks it is not guranteeed to be exactly one step behind, so the sim checks whether the received network sqn is acceptably newer.
+The current request's SQN is still used when verifying the network proof. The
+stored SQN is used separately to determine whether that request is fresh.
 
-  newer doesnot mean merely different, the received network sqn must be later in the squence that the value securely stored by the sim
+## Step 10: Check SQN Freshness
 
-  okay so the maintenance of sqn at the sim is to only verify the freshness of the sqn rather than using it in its side of proof generation   
+Add the SIM's locally stored sequence value:
 
-* step 9 : sim verifies the network proof 
-for this step only, use the received network sqn 
-``` cpp
-const Value sim_key = 1111 ; 
-const Value expected_network_proof = MakeTrialProof(sim_key,current_request.rand, current_request.sqn);
-
-cons bool network_is_authenticated = (current_request.network_proof == expected_network_proof);
-
-
-
+```cpp
+const Value sim_stored_sqn = 0;
 ```
 
-next simplified step , freshness will be : 
-current_request.sqn > sim_stored_sqn 
+In this example, the SIM previously accepted SQN 0. The simplified freshness
+check accepts only a larger sequence number:
 
-this accepts only a newer network sequence number 
+```cpp
+const bool sqn_is_fresh = current_request.sqn > sim_stored_sqn;
+```
 
-* step 10 - sim checks freshness add the sim's locally stored sequence value: 
+> This comparison is a teaching simplification. Real AKA uses more detailed
+> sequence-number range and resynchronization rules.
 
-const Value sim_stored_sqn = 0 
+## Step 11: Make the Final SIM Decision
 
-this means the si previously accepted sqn = 0 
+The SIM accepts the network only if the proof is valid **and** the sequence
+number is fresh:
 
-then check whether the received network value is newer : 
+```cpp
+const bool network_accepted =
+    network_is_authenticated && sqn_is_fresh;
 
-const bool sqn_is_fresh = 
-  (current_request.sqn > sim_stored_sqn)
+std::cout << "Network accepted: " << network_accepted << std::endl;
+```
 
-  
+The `&&` operator is the logical AND operator. It evaluates to `true` only when
+both operands are `true`.
