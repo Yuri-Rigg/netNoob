@@ -100,6 +100,49 @@ the scale form bands and channels.
   large amount of data per second yet still pause noticeably before a response
   begins.
 
+### Spectral efficiency: how much a hertz carries
+
+**Spectral efficiency** measures the useful information rate obtained from a
+given amount of radio bandwidth:
+
+$$
+\eta = \frac{R}{B}
+$$
+
+where \(R\) is the useful data rate in bits per second and \(B\) is channel
+bandwidth in hertz. The unit is **bits per second per hertz (bit/s/Hz)**. For
+example, a 10 MHz channel delivering 20 Mbit/s has an effective spectral
+efficiency of 2 bit/s/Hz. Because both quantities contain “per second,” the
+ratio is sometimes written bit/Hz, but bit/s/Hz states the meaning more clearly.
+
+The result depends on what is counted. **Peak link spectral efficiency** may
+describe one ideal radio link, while **cell spectral efficiency** includes the
+aggregate useful traffic delivered to all users in a cell. Real measurements
+also lose capacity to pilots, control messages, guard intervals, retransmissions,
+and protocol headers. Consequently, a single number such as “1G equals 0.003
+bit/s/Hz” is not a universal property of the generation. It may depend on the
+voice bit-rate equivalent, channel spacing, number of calls, sectorization, and
+frequency-reuse pattern used by a particular system.
+
+Spectral efficiency improves when the radio can safely use a denser modulation,
+a stronger-but-lower-overhead code, multiple spatial streams, or more precise
+scheduling. The appropriate setting depends on channel quality. A phone near a
+cell site may use a high-order modulation and high code rate; a phone behind a
+wall or at the cell edge usually falls back to a more robust combination. This
+adaptive choice is called **link adaptation**.
+
+The Shannon capacity relation gives an ideal upper bound for one noisy channel:
+
+$$
+C = B\log_2(1+\mathrm{SNR})
+$$
+
+It says that capacity grows linearly with bandwidth but only logarithmically
+with signal-to-noise ratio (SNR). Ever more transmit power therefore produces
+diminishing returns. Modern coding schemes can operate relatively close to this
+bound under suitable conditions, but no practical system can cross it without
+changing the bandwidth, SNR, or number of independent spatial channels.
+
 ### Why lower frequencies usually cover farther
 
 Lower-frequency waves have longer wavelengths. In typical mobile deployments,
@@ -125,6 +168,46 @@ in those regions. The wider channel—not the higher carrier frequency by
 itself—provides the opportunity for a higher data rate. The trade-off is that
 higher-frequency signals generally have shorter range and are more easily
 blocked.
+
+### From microphone to core network: the hardware path
+
+A mobile connection is a chain rather than a single radio. In the handset, a
+microphone, camera, or application produces information. A codec or application
+compresses it; protocol software forms packets; the modem performs channel
+coding, modulation, and radio-resource control; and the RF front end converts
+the modem's baseband signal to the assigned carrier frequency. Power amplifiers,
+filters, duplexers, antenna tuners, and one or more antennas then transmit or
+receive the waveform.
+
+At the cell site, antennas and remote radio units perform the reverse RF work.
+A baseband unit—or a distributed set of virtualized radio functions—processes
+the signal and schedules users. The **radio access network (RAN)** connects the
+device to the **core network**, which authenticates the subscription, tracks
+mobility, establishes sessions, applies policy, and routes traffic. Fibre,
+microwave, or another transport technology provides fronthaul and backhaul.
+The application server may still be many network hops away.
+
+```text
+application / microphone
+        ↓
+codec and protocol stack
+        ↓
+modem: coding, modulation, scheduling control
+        ↓
+RF front end ⇄ handset antennas
+        ⇅ radio channel
+cell-site antennas ⇄ radio/baseband processing
+        ↓
+transport network → mobile core → Internet or private service
+```
+
+The **radio channel** is the propagation environment between the antennas, not
+merely a numbered spectrum channel. A receiver may see a direct path plus
+delayed reflections from buildings, vehicles, and terrain. Those copies can
+reinforce or cancel one another, creating **multipath fading**. Motion adds
+Doppler shift; other transmitters add interference; walls add penetration loss.
+Channel estimation, equalization, coding, diversity, power control, and
+retransmission are different tools for surviving these impairments.
 
 
 
@@ -154,6 +237,22 @@ Commercial 1G systems arrived around the 1980s. Systems such as AMPS in North
 America, NMT in the Nordic countries, and TACS in the United Kingdom carried
 voice as an analogue radio signal.
 
+In this context, **analogue** means that the continuously varying speech
+waveform directly varied a radio-wave property rather than first becoming a
+stream of binary symbols. AMPS used frequency modulation (FM): instantaneous
+carrier-frequency deviation represented the audio waveform, while the
+transmitted signal's envelope—and therefore nominal RF output power—remained
+approximately constant. “Analogue” does not mean that literal sound travelled
+through the air to the tower; the microphone still converted sound into an
+electrical signal, which modulated a radio carrier.
+
+Most 1G systems used **frequency-division multiple access (FDMA)**. The operator
+split its spectrum into narrow channel pairs, one frequency for the uplink and
+another for the downlink, and assigned one pair to a call. Unused guard space
+and careful frequency planning reduced adjacent-channel interference. A call
+held its channel until release or handover, so silence generally did not free
+the resource for somebody else.
+
 ### What 1G achieved
 
 - Cellular frequency reuse dramatically increased capacity over car-radio systems.
@@ -181,6 +280,32 @@ whereas IS-95 used code-division multiple access. Digital encoding improved
 capacity, supported error correction, and made encryption practical on the
 radio path, although early algorithms and implementations were later attacked.
 
+### Two different ways to share 2G radio capacity
+
+**GSM combined FDMA and TDMA.** A GSM carrier is 200 kHz wide and its repeating
+radio frame contains eight time slots. Several users can therefore share one
+carrier by transmitting in assigned bursts at different times. Guard periods
+prevent neighbouring bursts from overlapping, timing advance compensates for
+different phone-to-tower distances, and Gaussian minimum-shift keying (**GMSK**)
+provides a power-efficient modulation. “Taking turns” is a useful analogy, but
+a traffic channel can also use a repeating fraction of multiple slots, and the
+network reserves some slots for control signalling.
+
+**IS-95 (cdmaOne) used direct-sequence CDMA.** Users can overlap in time and
+frequency across the same approximately 1.25 MHz carrier. Each transmission is
+spread by a high-rate code; the receiver correlates the composite waveform with
+the wanted code so that the desired signal combines coherently while other
+signals mostly resemble interference. Walsh codes help separate forward-link
+channels, while additional spreading sequences identify cells and users.
+CDMA does **not** give each conversation its own frequency band: code-domain
+separation is the key idea. Tight power control is essential because one very
+strong phone can otherwise drown out weaker phones—the near–far problem.
+
+Mobility also differed. GSM commonly used a **hard handover**, briefly changing
+from one channel/cell to another. IS-95 could use **soft handoff**, in which the
+phone communicates with more than one cell during the transition and the
+network combines or selects the useful signals.
+
 The unexpected cultural success was **SMS (Short Message Service)**. A feature
 based on short signalling messages became a new form of conversation. Digital
 networks also enabled SIM-based identity in GSM systems, better battery life,
@@ -199,11 +324,34 @@ and latency was high, but email, picture messages,
 and stripped-down websites became possible. The phone was beginning to resemble
 an Internet terminal.
 
+GPRS dynamically reused GSM time slots for packet traffic. EDGE (**Enhanced
+Data rates for GSM Evolution**) added denser modulation and new coding schemes.
+Classic EDGE's often-quoted maximum is about 473.6 kbit/s when all eight slots
+are assigned under ideal conditions; later Evolved EDGE variants targeted
+roughly megabit rates. Neither figure represents a normal single-user rate on a
+loaded network.
+
 ## 3G: the Internet fits in a pocket
 
 3G systems—including UMTS/WCDMA and CDMA2000—were designed with mobile data in
 mind. Later upgrades such as HSPA and HSPA+ made the improvement much more
 visible in everyday use.
+
+UMTS used **wideband CDMA (WCDMA)** as its principal radio interface. A nominal
+5 MHz carrier formed one wide shared “pipe,” compared with the approximately
+1.25 MHz carrier of IS-95/CDMA2000—not 2.5 MHz. User data was multiplied by
+channelization codes with different **spreading factors**: a high spreading
+factor traded data rate for processing gain, while a lower factor carried more
+symbols. Scrambling codes then helped distinguish cells or transmitting users.
+Convolutional and turbo coding added redundancy so a receiver could reconstruct
+many corrupted bits without retransmitting the whole block.
+
+The wideband signal could resolve multiple delayed paths. A **RAKE receiver**
+aligned and combined energy from those paths instead of treating every
+reflection as destructive. However, frequency-selective fading, inter-user
+interference, power-control error, and limited spectrum still constrained
+capacity. HSPA later introduced faster scheduling, improved modulation and
+coding, and hybrid retransmission to raise practical throughput.
 
 This generation coincided with capable browsers, touch-screen smartphones, app
 stores, better cameras, and cloud services. The network did not create those
@@ -216,6 +364,14 @@ approaches for voice and data increased complexity. Wider radio channels helped,
 but 3G's gains also came from improved modulation, coding, power control,
 scheduling, and evolving core-network capabilities. The next generation would
 make Internet Protocol the foundation.
+
+Initial UMTS targets and deployments were in the hundreds of kilobits per
+second; 384 kbit/s is a commonly cited mobile design rate. HSPA/HSPA+ raised
+theoretical peaks into the multi-megabit and, in later configurations,
+tens-of-megabits range. Claims such as “UMTS equals 56 Mbit/s” mix later
+evolutions or ideal configurations with baseline 3G. CDMA2000 followed a
+separate standards family, with 1xRTT for voice/data and EV-DO for faster packet
+data.
 
 ## 4G: the network becomes all-IP
 
@@ -234,10 +390,77 @@ Important radio techniques included:
 - more flexible scheduling, allowing the base station to respond quickly to
   changing radio conditions.
 
+### Why OFDM changed the channel design
+
+In orthogonal frequency-division multiplexing (**OFDM**), many narrow
+subcarriers overlap in spectrum but are mathematically orthogonal: at the
+sampling point for one subcarrier, the others ideally contribute zero. An
+inverse fast Fourier transform generates the transmitted waveform efficiently,
+and a fast Fourier transform separates it at the receiver. LTE downlink uses
+**OFDMA** to allocate different groups of subcarriers and time intervals to
+different users; the uplink uses SC-FDMA, which has a lower peak-to-average
+power ratio and is friendlier to a handset's power amplifier.
+
+A **cyclic prefix** copies a short section from the end of an OFDM symbol to its
+front. If delayed reflections fit within that interval, they do not significantly
+mix one symbol with the next, and the frequency-selective radio channel becomes
+many simpler, nearly flat subchannels. Known **reference or pilot signals** let
+the receiver estimate each subchannel's amplitude and phase. Frequency-domain
+equalization can then correct them with far less complexity than a single very
+wide, fast symbol stream would require.
+
+Orthogonality reduces the large guard spacing that conventional separated
+subchannels would require, but it does not abolish every guard. LTE and NR still
+use a cyclic prefix in time and reserve spectrum at channel edges to satisfy
+emission limits. Accurate synchronization is also required; frequency offset or
+rapid channel change causes the subcarriers to leak into one another.
+
+The scheduler operates in millisecond-scale transmission intervals and assigns
+resource blocks according to demand, channel reports, interference, and quality
+of service. If a deep fade damages a few subcarriers, interleaving and coding
+spread the risk rather than allowing one local notch to destroy an entire
+packet. **Forward error correction (FEC)** repairs many errors locally. When it
+cannot, **hybrid automatic repeat request (HARQ)**—not “hybrid ARC”—combines a
+retransmission with the earlier noisy observation instead of simply discarding
+the first attempt.
+
+### Frequency reuse, MIMO, and the LTE architecture
+
+Older FDMA/TDMA deployments often assigned different frequency groups to
+neighbouring cells, described by a reuse factor greater than one, to control
+co-channel interference. LTE commonly uses **reuse one**: every cell may use the
+whole carrier, while scheduling, sector antennas, power control, and
+inter-cell-interference coordination manage the contested cell edges. Reuse one
+provides more spectrum per cell but does not mean uniform coverage. Poor site
+placement, antenna downtilt, obstructions, or interference can still create
+coverage holes; overlapping coverage and mobility tuning are needed for clean
+handovers.
+
+**MIMO (multiple-input multiple-output)** uses multiple transmit and receive
+antennas. With diversity or beamforming it can make a link more reliable; with
+**spatial multiplexing** it sends separate data layers over distinguishable
+propagation paths in the same time-frequency resource. The latter increases
+throughput without adding bandwidth, but only when channel rank and SNR are good
+enough for the receiver to separate the layers.
+
+Architecturally, LTE simplified the RAN around the **eNodeB**, which handled
+radio scheduling and much of mobility control. The **Evolved Packet Core**
+separated control functions such as mobility/session management from packet
+gateways that carried user traffic. This flatter all-IP design reduced the
+number of network elements on the data path compared with 3G. VoLTE supplied
+managed IP voice through the IP Multimedia Subsystem rather than restoring a
+2G-style circuit.
+
 The result was not just faster browsing. Reliable mobile broadband supported
 HD streaming, real-time navigation, cloud-backed apps, creator video, remote
 work, and the platform economy. LTE-Advanced is one of the technologies formally
 recognized within ITU's IMT-Advanced family.
+
+IMT-Advanced used headline targets of about 100 Mbit/s under high mobility and
+1 Gbit/s under low mobility. Those were evaluation targets for qualifying
+systems, not minimum speeds promised to every 4G user. Early LTE deployments,
+channel widths, device limits, and shared-cell load often produced much lower
+rates.
 
 ## 5G: one network, several kinds of service
 
@@ -255,6 +478,58 @@ cases into three broad families:
 3. **Massive machine-type communications (mMTC):** large populations of devices
    that may transmit small amounts of data. The design emphasizes connection
    density, low device complexity, coverage, and long battery life.
+
+### 5G NR: flexible numerology and coding
+
+5G **New Radio (NR)** retains OFDM but makes its timing and frequency grid more
+flexible. A *numerology* selects subcarrier spacing and therefore the OFDM symbol
+duration. Common spacings scale as 15, 30, 60, and 120 kHz (with additional
+options in the specification). As spacing doubles, useful symbol duration
+halves: approximately 66.7, 33.3, 16.7, and 8.3 microseconds before the cyclic
+prefix. The rough-note range “120 kHz to 0.125” conflates subcarrier spacing
+with transmission time. Wider spacing and shorter slots can support faster
+scheduling and tolerate phase noise at high carrier frequencies, while narrower
+spacing is more frequency-efficient for long-range, delay-tolerant operation.
+
+NR uses **low-density parity-check (LDPC) codes** for user data and **polar
+codes** for important control information. These are not algorithms that remove
+the need for signal power or retransmission. They add structured redundancy,
+allowing the receiver to infer the most likely transmitted bits; a cyclic
+redundancy check tests the decoded block, and HARQ requests/combines more coded
+information when necessary. Decoding happens in both directions: a handset
+decodes downlink codewords, and a base station decodes uplink codewords.
+Reliability therefore means achieving a designed residual block-error rate
+within a delay budget—not that the raw radio channel has no bit errors.
+
+The IMT-2020 peak target is 20 Gbit/s downlink and 10 Gbit/s uplink under defined
+test conditions—not 200 Gbit/s to one ordinary phone. Field results around
+hundreds of Mbit/s or approximately 1 Gbit/s can be excellent yet remain highly
+dependent on spectrum, bandwidth, antenna layers, device category, cell load,
+backhaul, and location.
+
+### Massive MIMO, beamforming, and small cells
+
+**Massive MIMO** equips a base station with many individually controllable
+antenna elements. The array estimates the radio channel and adjusts each
+element's phase and amplitude so energy combines in useful directions. This
+**beamforming** creates a steerable radiation pattern rather than a perfectly
+isolated “data ray.” It can improve SNR, reduce unwanted interference, and let
+the same time-frequency resources serve spatially separable users.
+
+Beamforming and spatial multiplexing work together but are not synonyms.
+Beamforming concentrates or nulls energy; spatial multiplexing carries multiple
+independent data layers. A system may beamform one robust layer to a weak user,
+send several layers to one capable device, or direct different layers toward
+several users (**multi-user MIMO**). Channel estimation and calibration are
+critical: walls, movement, and changing reflections alter the channel on which
+the weights depend.
+
+Very high-frequency signals experience greater path loss and blockage, so
+operators may deploy **small cells**—low-power, short-range base stations—closer
+to demand. A macrocell supplies an umbrella layer while small cells add local
+capacity in streets, venues, offices, or campuses. Dense deployment increases
+site, fibre/backhaul, power, synchronization, handover, and interference-management
+requirements; it is not simply a matter of adding more antennas.
 
 ### 5G is not one frequency
 
@@ -276,6 +551,14 @@ Many early deployments used **non-standalone (NSA)** architecture: 5G radio
 worked with an existing 4G core and LTE anchor. **Standalone (SA)** 5G uses a 5G
 Core and can expose capabilities such as network slicing and more flexible
 traffic handling.
+
+The 5G base station is called a **gNodeB (gNB)**. It may be divided into radio,
+distributed, and centralized units so processing can be placed near the antenna
+or pooled farther away. The 5G Core uses service-based network functions for
+access and mobility, session management, authentication, policy, and user-plane
+forwarding. Separating the user plane makes it possible to place traffic exits
+near an edge application, although doing so is a deployment choice rather than
+an automatic property of 5G.
 
 **Network slicing** creates multiple logical networks on shared physical
 infrastructure. Think of one motorway divided into managed lanes: one slice
@@ -364,6 +647,41 @@ server. Improving one segment helps only until another becomes the bottleneck.
 This is why two people on the same generation can have radically different
 experiences.
 
+### Case study: low-band coverage, a campus dead zone, and SAR
+
+Suppose an operator uses a low-frequency band around a university. The band
+normally travels farther and penetrates walls better than mid-band or
+millimetre-wave service, yet a phone can still show weak or unusable service
+inside one building. Several mechanisms can explain the apparent contradiction:
+
+- reinforced concrete, metal-coated glass, lift shafts, and basement walls can
+  impose severe penetration loss;
+- the serving antenna may be too distant, aimed elsewhere, downtilted below or
+  above the room, or shadowed by another building;
+- the phone may hear the tower, but its lower-power uplink may not reach the
+  tower reliably, producing an imbalanced link;
+- many users may share a narrow low-band carrier, so a strong signal can still
+  provide little throughput; and
+- interference from cells reusing the same channel can make signal quality poor
+  even when raw received power looks acceptable.
+
+The engineering response begins with measurements: received power, signal
+quality/SINR, uplink performance, load, and handover logs. Remedies might
+include antenna retuning, a new indoor system or small cell, additional
+spectrum, interference coordination, or Wi-Fi calling. Simply increasing tower
+power may not fix the uplink and can worsen interference elsewhere.
+
+**Specific absorption rate (SAR)** measures the rate at which body tissue
+absorbs RF energy, expressed in watts per kilogram under a defined laboratory
+test procedure. “Low SAR” is a device/test result, not a mobile-generation
+feature and not a direct measure of network quality. Phone power control seeks
+the minimum transmit power needed for a dependable uplink, which also conserves
+battery and reduces interference. Poor coverage can make a phone transmit
+closer to its allowed maximum; good site placement and indoor coverage can
+therefore reduce typical handset transmit power. Compliance values, test
+averaging methods, antenna position, device design, and real operating power
+must be distinguished when comparing phones.
+
 ### New generations do not instantly erase old ones
 
 Operators usually refarm spectrum and retire networks gradually. Devices may
@@ -406,6 +724,19 @@ Speed enabled many applications, but architecture mattered just as much. Packet
 switching, Internet Protocol, software-defined functions, flexible radio use,
 and cloud-style operation progressively turned the mobile network into a general
 platform.
+
+| Generation | Representative channel/access design | Error protection and receiver tools | Radio and core architecture |
+|---|---|---|---|
+| 1G | Narrow FDMA channel pair per call; analogue FM; guard bands and planned frequency reuse | Analogue filtering and capture effect; no modern digital channel code | Cell-site radios connected to circuit-switched telephone infrastructure |
+| 2G GSM | 200 kHz carriers, eight-slot TDMA frames, GMSK | Interleaving, convolutional coding, equalization, power control | BTS/BSC radio subsystem plus circuit-switched core; GPRS/EDGE add packet nodes |
+| 2G IS-95 | About 1.25 MHz direct-sequence CDMA, Walsh/spreading codes | RAKE reception, convolutional coding, fast power control, soft handoff | Base stations/controllers connected to circuit voice and evolving packet functions |
+| 3G UMTS/WCDMA | Nominal 5 MHz CDMA carrier, variable spreading factors, scrambling codes | RAKE combining, convolutional/turbo coding, rapid power control; HSPA adds HARQ | NodeB and RNC; parallel circuit voice and packet-data domains |
+| 4G LTE | OFDMA downlink, SC-FDMA uplink, 15 kHz subcarriers, cyclic prefix, resource-block scheduling | Pilot-aided channel estimation, frequency-domain equalization, turbo coding, HARQ, MIMO | eNodeB with a flatter all-IP Evolved Packet Core; IMS/VoLTE for voice |
+| 5G NR | OFDM with flexible numerology, bandwidth parts, massive-MIMO scheduling and beamforming | LDPC data coding, polar control coding, HARQ, multi-antenna channel estimation | gNodeB with optional distributed units; service-based 5G Core, edge user plane, and slicing in SA deployments |
+
+The entries are representative rather than exhaustive. Duplex mode, band,
+release, operator configuration, and vendor implementation all create
+variations within one generation.
 
 ## Questions worth investigating
 
@@ -461,16 +792,22 @@ and available where people actually need it.
 | **Backhaul** | The links carrying traffic from cell sites toward the core network and Internet |
 | **Band** | A named range within the radio spectrum allocated or used for a particular class of service |
 | **Bandwidth** | The frequency width of a channel, measured in hertz; one factor that limits how much data it can carry |
+| **Beamforming** | Controlling an antenna array's phase and amplitude so transmitted or received energy combines preferentially in selected directions |
 | **Cell** | A geographic radio coverage area served by a base station or sector |
 | **Channel** | A defined slice of spectrum used for a transmission or shared radio service |
+| **Channel coding / FEC** | Adding structured redundancy so a receiver can detect or correct transmission errors without retransmitting every damaged block |
 | **Core network** | Systems that authenticate users, manage sessions and mobility, apply policy, and route traffic |
 | **Frequency** | The number of wave cycles per second, measured in hertz |
 | **Handover** | Transfer of an active connection from one cell or radio resource to another |
+| **HARQ** | Hybrid automatic repeat request; error correction combined with soft combining of retransmitted information |
 | **Latency** | Time taken for data to travel and receive a response; it is distinct from data rate |
 | **MIMO** | Multiple-input multiple-output; use of multiple antennas and spatial paths |
+| **Modulation** | Mapping information onto changes in a carrier's amplitude, phase, frequency, or a combination of them |
 | **Network slicing** | Creation of logically separated, policy-controlled network services with tailored characteristics on shared infrastructure |
 | **Packet switching** | Sending data in addressed chunks that share network resources |
 | **RAN** | Radio access network: base stations, radios, antennas, and related functions connecting devices to the core |
+| **SAR** | Specific absorption rate; RF energy absorbed per unit mass under a defined test, measured in watts per kilogram |
+| **Spectral efficiency** | Useful information rate divided by occupied bandwidth, normally expressed in bit/s/Hz |
 | **Spectrum** | Ranges of electromagnetic frequency used to carry radio signals |
 | **Throughput** | Data successfully delivered per unit of time; real throughput is normally below a theoretical peak |
 
